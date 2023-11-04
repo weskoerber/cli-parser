@@ -1,27 +1,36 @@
 #include "parser.h"
 #include <stdio.h>
 
-static char *name = NULL;
+static char *name = "NULL";
 
-void say_hello(char **args) {
+void say_hello(size_t argc, char **argv) {
   printf("Hello, world!\n");
 }
 
-void greet(char **args) {
-  name = args[0];
+void greet(size_t argc, char **argv) {
+  name = argv[0];
+}
+
+void greet_many(size_t argc, char **argv) {
+  printf("Hello: ");
+  for (int i = 0; i < argc; i++) {
+    printf("\n- %s", argv[i]);
+  }
+  printf("\n");
 }
 
 static const opt opts[] = {{"-h", false, 0, say_hello},
+                           {"-n", false, 2, greet_many},
                            {"-g", false, 1, greet}};
 
 int main(int argc, char **argv) {
-  // Parse the CLI input
   parser_init(argc, argv, opts, sizeof(opts) / sizeof(opts[0]));
+
   parser_parse_cli();
 
-  // Run the application with the parsed input
-  printf("Hello, %s!\n", name);
+  printf("Hello, %s\n", name);
 
-  // Clean up the parser
   parser_cleanup();
+
+  return 0;
 }
