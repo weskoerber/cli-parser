@@ -1,4 +1,5 @@
 #include "parser.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +19,11 @@ static size_t num_opts = 0;
 const opt *find_opt(const char *token, const opt *const opts);
 void exec_opt_fp(const opt *const opt, char **arg_start);
 
-void parser_init(int t_argc, char **t_argv, const opt *t_opts,
-                 size_t t_num_opts) {
+void parser_init(
+  int t_argc,
+  char **t_argv,
+  const opt *t_opts,
+  size_t t_num_opts) {
   argc = t_argc;
   argv = t_argv;
   num_opts = t_num_opts;
@@ -41,54 +45,54 @@ void parser_parse_cli() {
     token = argv[i];
 
     switch (state) {
-    case start:
-      state = flag;
-      break;
-    case flag:
-      if (token[0] != '-') {
-        fprintf(stderr, "Error: expected flag, got '%s'\n", token);
+      case start:
+        state = flag;
+        break;
+      case flag:
+        if (token[0] != '-') {
+          fprintf(stderr, "Error: expected flag, got '%s'\n", token);
+          invalid = true;
+          break;
+        }
+        current_opt = find_opt(token, opts);
+        if (current_opt == NULL) {
+          fprintf(stderr, "Error: Unrecognized flag: '%s'\n", token);
+          invalid = true;
+          break;
+        }
+
+        params = current_opt->args;
+        if (params) {
+          state = param;
+          flag_arg_start = NULL;
+        } else {
+          state = done;
+        }
+        break;
+      case param:
+        if (token[0] == '-') {
+          fprintf(stderr, "Error: expected argument, got '%s'\n", token);
+          invalid = true;
+          break;
+        }
+
+        if (flag_arg_start == NULL) {
+          flag_arg_start = &argv[i];
+        }
+
+        if (--params == 0) {
+          state = done;
+        }
+
+        break;
+      case done:
+        exec_opt_fp(current_opt, flag_arg_start);
+        state = flag;
+        break;
+      default:
+        fprintf(stderr, "Error: Invalid token: '%s'\n", token);
         invalid = true;
         break;
-      }
-      current_opt = find_opt(token, opts);
-      if (current_opt == NULL) {
-        fprintf(stderr, "Error: Unrecognized flag: '%s'\n", token);
-        invalid = true;
-        break;
-      }
-
-      params = current_opt->args;
-      if (params) {
-        state = param;
-        flag_arg_start = NULL;
-      } else {
-        state = done;
-      }
-      break;
-    case param:
-      if (token[0] == '-') {
-        fprintf(stderr, "Error: expected argument, got '%s'\n", token);
-        invalid = true;
-        break;
-      }
-
-      if (flag_arg_start == NULL) {
-        flag_arg_start = &argv[i];
-      }
-
-      if (--params == 0) {
-        state = done;
-      }
-
-      break;
-    case done:
-      exec_opt_fp(current_opt, flag_arg_start);
-      state = flag;
-      break;
-    default:
-      fprintf(stderr, "Error: Invalid token: '%s'\n", token);
-      invalid = true;
-      break;
     }
 
     // Stop processing immediately if input is invalid

@@ -1,4 +1,5 @@
 #include "parser.h"
+
 #include <stdio.h>
 
 static char *name = "NULL";
@@ -19,9 +20,11 @@ void greet_many(size_t argc, char **argv) {
   printf("\n");
 }
 
-static const opt opts[] = {{"-h", false, 0, say_hello},
-                           {"-n", false, 2, greet_many},
-                           {"-g", false, 1, greet}};
+static const opt opts[] = {
+  {"-h", false, 0, say_hello },
+  {"-n", false, 2, greet_many},
+  {"-g", false, 1, greet     }
+};
 
 int main(int argc, char **argv) {
   parser_init(argc, argv, opts, sizeof(opts) / sizeof(opts[0]));
