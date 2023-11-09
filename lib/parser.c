@@ -1,5 +1,9 @@
 #include "parser.h"
 
+#include "cli.h"
+#include "cli_internal.h"
+
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,35 +15,16 @@ typedef enum {
   done,
 } parse_state;
 
-static int argc = 0;
-static char **argv = NULL;
-static const opt *opts = NULL;
-static size_t num_opts = 0;
-
 const opt *find_opt(const char *token, const opt *const opts);
-void exec_opt_fp(const opt *const opt, char **arg_start);
+void exec_opt_fp(const opt *const opt, const char *arg_start[]);
 
-void parser_init(
-  int t_argc,
-  char **t_argv,
-  const opt *t_opts,
-  size_t t_num_opts) {
-  argc = t_argc;
-  argv = t_argv;
-  num_opts = t_num_opts;
-  opts = t_opts;
-}
-
-void parser_cleanup() {
-}
-
-void parser_parse_cli() {
-  bool invalid = false;
-  char *token = NULL;
-  char **flag_arg_start = NULL;
+ParseError cli_parse(int argc, const char *argv[]) {
+  const char *token = NULL;
+  const char **flag_arg_start = NULL;
   parse_state state = start;
   size_t params = 0;
   const opt *current_opt = NULL;
+  ParseError err = PARSE_ERROR_NONE;
 
   for (size_t i = 0; i < argc; i++) {
     token = argv[i];
@@ -51,13 +36,13 @@ void parser_parse_cli() {
       case flag:
         if (token[0] != '-') {
           fprintf(stderr, "Error: expected flag, got '%s'\n", token);
-          invalid = true;
+          err = PARSE_ERROR_UNEXPECTED_TOKEN;
           break;
         }
         current_opt = find_opt(token, opts);
         if (current_opt == NULL) {
           fprintf(stderr, "Error: Unrecognized flag: '%s'\n", token);
-          invalid = true;
+          err = PARSE_ERROR_UNKNOWN_FLAG;
           break;
         }
 
@@ -72,7 +57,7 @@ void parser_parse_cli() {
       case param:
         if (token[0] == '-') {
           fprintf(stderr, "Error: expected argument, got '%s'\n", token);
-          invalid = true;
+          err = PARSE_ERROR_MISSING_ARGUMENT;
           break;
         }
 
@@ -91,12 +76,12 @@ void parser_parse_cli() {
         break;
       default:
         fprintf(stderr, "Error: Invalid token: '%s'\n", token);
-        invalid = true;
+        err = PARSE_ERROR_UNEXPECTED_TOKEN;
         break;
     }
 
     // Stop processing immediately if input is invalid
-    if (invalid) {
+    if (err != PARSE_ERROR_NONE) {
       break;
     }
 
@@ -109,9 +94,11 @@ void parser_parse_cli() {
     }
   }
 
-  if (invalid) {
+  if (err != PARSE_ERROR_NONE) {
     fprintf(stderr, "DEBUG: Parsing completed with error\n");
   }
+
+  return err;
 }
 
 const opt *find_opt(const char *token, const opt *const opts) {
@@ -124,6 +111,6 @@ const opt *find_opt(const char *token, const opt *const opts) {
   return NULL;
 }
 
-void exec_opt_fp(const opt *const opt, char **arg_start) {
+void exec_opt_fp(const opt *const opt, const char *arg_start[]) {
   opt->fp(opt->args, arg_start);
 }
