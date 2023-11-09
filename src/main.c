@@ -23,9 +23,11 @@ void greet_many(size_t argc, const char *argv[]) {
 
 int main(int argc, const char *argv[]) {
   cli_init();
+
   cli_add_option("-h", 0, say_hello);
   cli_add_option("-g", 1, greet);
   cli_add_option("-n", 2, greet_many);
+  cli_add_option("--name", 1, greet);
 
   ParseError err = cli_parse(argc, argv);
   if (err != PARSE_ERROR_NONE) {

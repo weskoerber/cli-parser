@@ -33,6 +33,7 @@ ParseError cli_parse(int argc, const char *argv[]) {
       case start:
         state = flag;
         break;
+
       case flag:
         if (token[0] != '-') {
           fprintf(stderr, "Error: expected flag, got '%s'\n", token);
@@ -54,6 +55,7 @@ ParseError cli_parse(int argc, const char *argv[]) {
           state = done;
         }
         break;
+
       case param:
         if (token[0] == '-') {
           fprintf(stderr, "Error: expected argument, got '%s'\n", token);
@@ -68,12 +70,12 @@ ParseError cli_parse(int argc, const char *argv[]) {
         if (--params == 0) {
           state = done;
         }
-
         break;
+
       case done:
         exec_opt_fp(current_opt, flag_arg_start);
-        state = flag;
         break;
+
       default:
         fprintf(stderr, "Error: Invalid token: '%s'\n", token);
         err = PARSE_ERROR_UNEXPECTED_TOKEN;
@@ -84,17 +86,18 @@ ParseError cli_parse(int argc, const char *argv[]) {
     if (err != PARSE_ERROR_NONE) {
       break;
     }
-
-    // If flag parsing completes on last element in argv, the function pointer
-    // won't be called, as the bound on argc causes the for loop to exit. There
-    // may be a better solution to this problem, but for now this works.
-    if (state == done) {
-      exec_opt_fp(current_opt, flag_arg_start);
-      state = flag;
-    }
   }
 
-  if (err != PARSE_ERROR_NONE) {
+  // If there's no error but the 'done' state wasn't reached, input terminated
+  // prematurely
+  if (err == PARSE_ERROR_NONE && state != done) {
+    err = PARSE_ERROR_UNEXPECTED_END;
+  }
+
+  // Only call the callback if there's no error
+  if (err == PARSE_ERROR_NONE) {
+    exec_opt_fp(current_opt, flag_arg_start);
+  } else {
     fprintf(stderr, "DEBUG: Parsing completed with error\n");
   }
 
