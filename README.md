@@ -2,7 +2,36 @@
 
 A tiny CLI parsing library.
 
+⚠️ **Note**: This project is not yet stable. If you decide to use this library,
+expect breaking changes!
+
+## Getting Started
+
+### Prerequisites
+
+- CMake version 3.27
+- (Optional) [Criterion](https://github.com/snaipe/criterion)
+    - Required if you want to build and run the tests
+
+### Building
+
+To build the library and the example application:
+
+```shell
+cmake -B build
+cmake --build build
+```
+
+To build and run the tests:
+
+```shell
+cmake -B build -D TESTING=1
+cmake --build build --target test
+```
+
 ## Usage
+
+Here is a simple example:
 
 ```c
 #include "cli/cli.h"
