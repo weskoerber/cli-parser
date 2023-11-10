@@ -7,11 +7,14 @@
 #include <string.h>
 
 typedef enum {
-  start,
   flag,
   param,
-  done,
 } parse_state;
+
+static const char *states[] = {
+  [flag] = "flag",
+  [param] = "param",
+};
 
 const opt *find_opt(const char *token, const opt *const opts);
 void exec_opt_fp(const opt *const opt, const char *arg_start[]);
@@ -19,19 +22,15 @@ void exec_opt_fp(const opt *const opt, const char *arg_start[]);
 ParseError cli_parse(int argc, const char *argv[]) {
   const char *token = NULL;
   const char **flag_arg_start = NULL;
-  parse_state state = start;
+  parse_state state = flag;
   size_t params = 0;
   const opt *current_opt = NULL;
   ParseError err = PARSE_ERROR_NONE;
 
-  for (size_t i = 0; i < argc; i++) {
+  for (size_t i = 1; i < argc; i++) {
     token = argv[i];
 
     switch (state) {
-      case start:
-        state = flag;
-        break;
-
       case flag:
         if (token[0] != '-') {
           fprintf(stderr, "Error: expected flag, got '%s'\n", token);
@@ -50,7 +49,8 @@ ParseError cli_parse(int argc, const char *argv[]) {
           state = param;
           flag_arg_start = NULL;
         } else {
-          state = done;
+          state = flag;
+          exec_opt_fp(current_opt, flag_arg_start);
         }
         break;
 
@@ -66,12 +66,9 @@ ParseError cli_parse(int argc, const char *argv[]) {
         }
 
         if (--params == 0) {
-          state = done;
+          state = flag;
+          exec_opt_fp(current_opt, flag_arg_start);
         }
-        break;
-
-      case done:
-        exec_opt_fp(current_opt, flag_arg_start);
         break;
 
       default:
@@ -86,16 +83,11 @@ ParseError cli_parse(int argc, const char *argv[]) {
     }
   }
 
-  // If there's no error but the 'done' state wasn't reached, input terminated
-  // prematurely
-  if (err == PARSE_ERROR_NONE && state != done) {
-    err = PARSE_ERROR_UNEXPECTED_END;
+  if (params) {
+    err = PARSE_ERROR_UNEXPECTED_EOL;
   }
 
-  // Only call the callback if there's no error
-  if (err == PARSE_ERROR_NONE) {
-    exec_opt_fp(current_opt, flag_arg_start);
-  } else {
+  if (err) {
     fprintf(stderr, "DEBUG: Parsing completed with error\n");
   }
 

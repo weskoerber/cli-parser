@@ -11,13 +11,19 @@ typedef enum {
   PARSE_ERROR_UNEXPECTED_TOKEN,
   PARSE_ERROR_UNKNOWN_FLAG,
   PARSE_ERROR_MISSING_ARGUMENT,
-  PARSE_ERROR_UNEXPECTED_END,
+  PARSE_ERROR_UNEXPECTED_EOL,
+  PARSE_ERROR_MISSING_REQUIRED,
 } ParseError;
 
 void cli_init();
 void cli_cleanup();
 
 bool cli_add_option(
+  const char *name,
+  size_t arity,
+  void (*fp)(size_t nargs, const char *args[]));
+
+bool cli_add_required_option(
   const char *name,
   size_t arity,
   void (*fp)(size_t nargs, const char *args[]));
