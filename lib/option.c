@@ -43,7 +43,7 @@ bool cli_add_option_internal(
 
   opts[num_opts] = (opt) {
     .opt = name,
-    .required = false,
+    .required = required,
     .found = false,
     .args = arity,
     .fp = fp,

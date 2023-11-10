@@ -16,7 +16,7 @@ static const char *states[] = {
   [param] = "param",
 };
 
-const opt *find_opt(const char *token, const opt *const opts);
+opt *find_opt(const char *token, opt *const opts);
 void exec_opt_fp(const opt *const opt, const char *arg_start[]);
 
 ParseError cli_parse(int argc, const char *argv[]) {
@@ -24,7 +24,7 @@ ParseError cli_parse(int argc, const char *argv[]) {
   const char **flag_arg_start = NULL;
   parse_state state = flag;
   size_t params = 0;
-  const opt *current_opt = NULL;
+  opt *current_opt = NULL;
   ParseError err = PARSE_ERROR_NONE;
 
   for (size_t i = 1; i < argc; i++) {
@@ -44,6 +44,7 @@ ParseError cli_parse(int argc, const char *argv[]) {
           break;
         }
 
+        current_opt->found = true;
         params = current_opt->args;
         if (params) {
           state = param;
@@ -83,18 +84,20 @@ ParseError cli_parse(int argc, const char *argv[]) {
     }
   }
 
-  if (params) {
+  if (err == PARSE_ERROR_NONE && params != 0) {
     err = PARSE_ERROR_UNEXPECTED_EOL;
-  }
-
-  if (err) {
-    fprintf(stderr, "DEBUG: Parsing completed with error\n");
+  } else {
+    for (size_t i = 0; i < num_opts; i++) {
+      if (opts[i].required && !opts[i].found) {
+        err = PARSE_ERROR_MISSING_REQUIRED;
+      }
+    }
   }
 
   return err;
 }
 
-const opt *find_opt(const char *token, const opt *const opts) {
+opt *find_opt(const char *token, opt *const opts) {
   for (size_t i = 0; i < num_opts; i++) {
     if (strcmp(token, opts[i].opt) == 0) {
       return &opts[i];

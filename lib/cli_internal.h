@@ -4,6 +4,7 @@
 
 typedef struct {
   const char *opt;
+  bool required;
   bool found;
   size_t args;
   void (*fp)(size_t count, const char *args[]);
